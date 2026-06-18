@@ -6,8 +6,10 @@ import type {
   ReviewData,
   RiskLabel,
   DispositionAction,
+  PeakMinuteInfo,
 } from "@/types";
 import { generateDanmaku } from "@/utils/danmakuSimulator";
+import { RISK_KEYWORDS } from "@/utils/danmakuSimulator";
 
 interface LiveStore {
   session: LiveSession | null;
@@ -180,19 +182,67 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
       .sort(([a], [b]) => a - b)
       .map(([minute, counts]) => ({ minute, ...counts }));
 
-    const wordCount = new Map<string, number>();
-    const stopWords = new Set(["的", "了", "是", "在", "我", "你", "他", "她", "它", "们", "这", "那", "有", "不", "就", "都", "也", "和", "与", "吗", "吧", "啊", "呢", "哦", "哈"]);
-    riskDanmaku.forEach((d) => {
-      const words = d.content.split("").filter((w) => w.trim() && !stopWords.has(w));
-      words.forEach((w) => {
-        wordCount.set(w, (wordCount.get(w) || 0) + 1);
+    const peakMinutes: PeakMinuteInfo[] = riskTimeline
+      .map((t) => {
+        const total = t.highRisk + t.mediumRisk + t.lowRisk;
+        const minuteDanmaku = riskDanmaku.filter((d) => {
+          const m = Math.floor((d.timestamp - startTime) / 60000);
+          return m === t.minute;
+        });
+        const labelCount: Record<string, number> = {};
+        minuteDanmaku.forEach((d) => {
+          labelCount[d.riskLabel] = (labelCount[d.riskLabel] || 0) + 1;
+        });
+        const topLabel = Object.entries(labelCount).sort((a, b) => b[1] - a[1])[0]?.[0] as RiskLabel || "正常";
+        return {
+          minute: t.minute,
+          total,
+          highRisk: t.highRisk,
+          mediumRisk: t.mediumRisk,
+          lowRisk: t.lowRisk,
+          topLabel,
+        };
+      })
+      .filter((t) => t.total > 0)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+
+    const wordCount = new Map<string, { count: number; label: RiskLabel }>();
+
+    for (const [label, keywords] of Object.entries(RISK_KEYWORDS)) {
+      if (label === "正常") continue;
+      for (const word of keywords) {
+        const matches = riskDanmaku.filter((d) => d.content.includes(word)).length;
+        if (matches > 0) {
+          const existing = wordCount.get(word);
+          if (!existing || matches > existing.count) {
+            wordCount.set(word, { count: matches, label: label as RiskLabel });
+          }
+        }
+      }
+    }
+
+    if (session) {
+      session.brandBannedWords.forEach((word) => {
+        if (!word) return;
+        const matches = riskDanmaku.filter((d) => d.content.includes(word)).length;
+        if (matches > 0) {
+          wordCount.set(word, { count: matches, label: "恶意带节奏" });
+        }
       });
-    });
+      session.sensitiveTopics.forEach((topic) => {
+        if (!topic) return;
+        const matches = riskDanmaku.filter((d) => d.content.includes(topic)).length;
+        if (matches > 0) {
+          wordCount.set(topic, { count: matches, label: "涉政擦边" });
+        }
+      });
+    }
 
     const topRiskWords = Array.from(wordCount.entries())
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => b[1].count - a[1].count)
       .slice(0, 30)
-      .map(([word, count]) => ({ word, count }));
+      .map(([word, info]) => ({ word, count: info.count, label: info.label }));
 
     const disposedIds = new Set(dispositions.map((d) => d.danmakuId));
     const unprocessed = queueItems.length + riskDanmaku.filter((d) => !disposedIds.has(d.id) && !queueItems.some((q) => q.id === d.id)).length;
@@ -209,6 +259,7 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
 
     return {
       riskTimeline,
+      peakMinutes,
       topRiskWords,
       dispositionStats: {
         total: riskDanmaku.length,

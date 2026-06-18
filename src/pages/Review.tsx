@@ -4,6 +4,7 @@ import RiskTimeline from "@/components/Review/RiskTimeline";
 import WordCloud from "@/components/Review/WordCloud";
 import DispositionStats from "@/components/Review/DispositionStats";
 import DispositionLog from "@/components/Review/DispositionLog";
+import PeakMinutesSummary from "@/components/Review/PeakMinutesSummary";
 import {
   FileText,
   Download,
@@ -112,15 +113,20 @@ export default function Review() {
       <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="rounded-xl bg-[#1A1D28] border border-[#2A2D3A] p-4">
-            <RiskTimeline />
+            <PeakMinutesSummary />
           </div>
           <div className="rounded-xl bg-[#1A1D28] border border-[#2A2D3A] p-4">
             <DispositionStats />
           </div>
         </div>
 
-        <div className="rounded-xl bg-[#1A1D28] border border-[#2A2D3A] p-4">
-          <WordCloud />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-xl bg-[#1A1D28] border border-[#2A2D3A] p-4">
+            <RiskTimeline />
+          </div>
+          <div className="rounded-xl bg-[#1A1D28] border border-[#2A2D3A] p-4">
+            <WordCloud />
+          </div>
         </div>
 
         <div className="rounded-xl bg-[#1A1D28] border border-[#2A2D3A] p-4">

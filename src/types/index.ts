@@ -45,9 +45,19 @@ export interface LiveSession {
   handlerName: string;
 }
 
+export interface PeakMinuteInfo {
+  minute: number;
+  total: number;
+  highRisk: number;
+  mediumRisk: number;
+  lowRisk: number;
+  topLabel: RiskLabel;
+}
+
 export interface ReviewData {
   riskTimeline: { minute: number; highRisk: number; mediumRisk: number; lowRisk: number }[];
-  topRiskWords: { word: string; count: number }[];
+  peakMinutes: PeakMinuteInfo[];
+  topRiskWords: { word: string; count: number; label: RiskLabel }[];
   dispositionStats: {
     total: number;
     processed: number;

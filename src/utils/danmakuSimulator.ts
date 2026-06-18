@@ -1,7 +1,7 @@
 import type { Danmaku, RiskLabel, RiskLevel, LiveSession } from "@/types";
 import { RISK_LEVELS } from "@/types";
 
-const RISK_KEYWORDS: Record<RiskLabel, string[]> = {
+export const RISK_KEYWORDS: Record<RiskLabel, string[]> = {
   "辱骂": ["垃圾", "废物", "滚", "傻", "蠢", "死", "恶心", "烂", "废", "贱", "狗", "猪"],
   "人身攻击": ["丑", "肥", "矮", "穷", "老", "秃", "瞎", "残疾", "长相", "外貌", "身材", "脸"],
   "诱导维权": ["退款", "维权", "投诉", "举报", "315", "消费者", "欺诈", "假货", "欺骗", "赔偿"],

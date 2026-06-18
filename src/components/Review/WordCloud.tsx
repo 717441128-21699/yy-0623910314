@@ -1,4 +1,5 @@
 import { useLiveStore } from "@/store/useLiveStore";
+import { RISK_LABEL_COLORS } from "@/types";
 import { Cloud } from "lucide-react";
 
 export default function WordCloud() {
@@ -16,31 +17,32 @@ export default function WordCloud() {
 
   const maxCount = topRiskWords[0]?.count || 1;
 
-  const colors = [
-    "text-red-400", "text-orange-400", "text-amber-400", "text-purple-400",
-    "text-blue-400", "text-pink-400", "text-cyan-400", "text-emerald-400",
-  ];
-
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Cloud size={14} className="text-purple-400" />
         <h3 className="text-sm font-medium text-gray-300">常见风险词</h3>
+        <span className="text-[10px] text-gray-600">（按完整词统计）</span>
       </div>
-      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 py-4 min-h-[120px]">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 py-4 min-h-[120px]">
         {topRiskWords.map((item, index) => {
           const ratio = item.count / maxCount;
-          const fontSize = Math.max(12, Math.round(ratio * 36));
-          const colorClass = colors[index % colors.length];
+          const fontSize = Math.max(12, Math.round(12 + ratio * 20));
+          const color = RISK_LABEL_COLORS[item.label] || "#6B7280";
           return (
-            <span
+            <div
               key={item.word}
-              className={`${colorClass} font-medium transition-all hover:scale-110 cursor-default`}
-              style={{ fontSize: `${fontSize}px` }}
-              title={`${item.word}: ${item.count}次`}
+              className="flex flex-col items-center cursor-default"
+              title={`${item.word}: ${item.count}次 (${item.label})`}
             >
-              {item.word}
-            </span>
+              <span
+                className="font-medium transition-all hover:scale-110"
+                style={{ fontSize: `${fontSize}px`, color }}
+              >
+                {item.word}
+              </span>
+              <span className="text-[10px] text-gray-600">{item.count}次</span>
+            </div>
           );
         })}
       </div>
