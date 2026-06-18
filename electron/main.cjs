@@ -1,10 +1,12 @@
 const { app, BrowserWindow, Menu, shell, ipcMain } = require("electron");
 const path = require("path");
+const { exec } = require("child_process");
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = !app.isPackaged;
 const isMac = process.platform === "darwin";
 
 let mainWindow;
+let viteProcess = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -14,7 +16,7 @@ function createWindow() {
     minHeight: 720,
     title: "弹幕盯屏工具",
     backgroundColor: "#0A0C12",
-    icon: path.join(__dirname, "../public/favicon.svg"),
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -24,10 +26,26 @@ function createWindow() {
   });
 
   if (isDev) {
-    mainWindow.loadURL("http://localhost:5174");
-    mainWindow.webContents.openDevTools({ mode: "detach" });
+    const tryLoad = (retries = 0) => {
+      mainWindow
+        .loadURL("http://localhost:5174")
+        .then(() => {
+          mainWindow.show();
+          mainWindow.webContents.openDevTools({ mode: "detach" });
+        })
+        .catch(() => {
+          if (retries < 30) {
+            setTimeout(() => tryLoad(retries + 1), 1000);
+          } else {
+            mainWindow.show();
+          }
+        });
+    };
+    tryLoad();
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    mainWindow.loadFile(path.join(__dirname, "../dist/index.html")).then(() => {
+      mainWindow.show();
+    });
   }
 
   mainWindow.on("closed", () => {
@@ -60,7 +78,17 @@ function createMenu() {
       : []),
     {
       label: "文件",
-      submenu: [isMac ? { role: "close" } : { role: "quit" }],
+      submenu: [
+        {
+          label: "新建盯屏",
+          accelerator: "CmdOrCtrl+N",
+          click: () => {
+            if (mainWindow) mainWindow.webContents.send("navigate", "/");
+          },
+        },
+        { type: "separator" },
+        isMac ? { role: "close" } : { role: "quit" },
+      ],
     },
     {
       label: "编辑",
@@ -114,7 +142,18 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
+  if (viteProcess) {
+    viteProcess.kill();
+    viteProcess = null;
+  }
   if (!isMac) app.quit();
+});
+
+app.on("before-quit", () => {
+  if (viteProcess) {
+    viteProcess.kill();
+    viteProcess = null;
+  }
 });
 
 ipcMain.handle("get-app-version", () => {

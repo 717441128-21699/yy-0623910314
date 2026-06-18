@@ -14,6 +14,7 @@
     "check": "tsc -b --noEmit",
     "electron:dev": "set NODE_ENV=development&& electron .",
     "electron:prod": "electron .",
+    "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder",
     "dist:win": "npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",

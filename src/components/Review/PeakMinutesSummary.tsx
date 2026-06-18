@@ -1,5 +1,6 @@
 import { useLiveStore } from "@/store/useLiveStore";
-import { RISK_LABEL_BG } from "@/types";
+import { RISK_LABEL_BG, RISK_LABEL_COLORS } from "@/types";
+import type { RiskLabel } from "@/types";
 import { TrendingUp, AlertTriangle } from "lucide-react";
 
 export default function PeakMinutesSummary() {
@@ -27,58 +28,66 @@ export default function PeakMinutesSummary() {
         {peakMinutes.map((peak, index) => (
           <div
             key={peak.minute}
-            className="flex items-center gap-3 p-3 rounded-lg bg-[#0F1117] border border-[#2A2D3A]"
+            className="p-3 rounded-lg bg-[#0F1117] border border-[#2A2D3A] space-y-2"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 text-red-400 font-bold text-sm shrink-0">
-              {index + 1}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-red-500/20 text-red-400 font-bold text-xs shrink-0">
+                {index + 1}
+              </div>
+              <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-200">
                   第 {peak.minute} 分钟
                 </span>
-                <span
-                  className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium border ${RISK_LABEL_BG[peak.topLabel]}`}
-                >
-                  {peak.topLabel} 为主
-                </span>
-              </div>
-              <div className="flex items-center gap-4 text-[11px] text-gray-500">
-                <span>
+                <span className="text-xs text-gray-500">
                   共 <span className="text-gray-300 font-medium">{peak.total}</span> 条风险
                 </span>
-                <span>
-                  高危 <span className="text-red-400 font-medium">{peak.highRisk}</span>
+                <span className="text-[10px] text-red-400">
+                  高危 {peak.highRisk}
                 </span>
-                <span>
-                  中危 <span className="text-orange-400 font-medium">{peak.mediumRisk}</span>
+                <span className="text-[10px] text-orange-400">
+                  中危 {peak.mediumRisk}
                 </span>
-              </div>
-              <div className="mt-2 w-full h-1.5 rounded-full bg-[#1A1D28] overflow-hidden flex">
-                <div
-                  className="h-full bg-red-500"
-                  style={{ width: `${peak.total > 0 ? (peak.highRisk / peak.total) * 100 : 0}%` }}
-                />
-                <div
-                  className="h-full bg-orange-500"
-                  style={{ width: `${peak.total > 0 ? (peak.mediumRisk / peak.total) * 100 : 0}%` }}
-                />
-                <div
-                  className="h-full bg-yellow-500"
-                  style={{ width: `${peak.total > 0 ? (peak.lowRisk / peak.total) * 100 : 0}%` }}
-                />
               </div>
             </div>
+
+            {peak.labelDistribution.length > 0 && (
+              <div className="ml-10 space-y-1">
+                {peak.labelDistribution.map((item) => (
+                  <div key={item.label} className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium border ${RISK_LABEL_BG[item.label]}`}
+                    >
+                      {item.label}
+                    </span>
+                    <div className="flex-1 h-1.5 rounded-full bg-[#1A1D28] overflow-hidden max-w-[120px]">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${peak.total > 0 ? (item.count / peak.total) * 100 : 0}%`,
+                          backgroundColor: RISK_LABEL_COLORS[item.label],
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-gray-500 w-8 text-right">
+                      {item.count}条
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {peakMinutes.length > 0 && (
-        <div className="mt-3 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+      {peakMinutes.length > 0 && peakMinutes[0].labelDistribution.length > 0 && (
+        <div className="mt-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
           <p className="text-xs text-red-300/80">
             💡 交接提示：第 {peakMinutes[0].minute} 分钟风险最高（{peakMinutes[0].total} 条），
-            以<span className="font-medium"> {peakMinutes[0].topLabel} </span>
-            为主，建议主播在该时段前后注意话术节奏，房管重点盯屏。
+            标签分布：
+            {peakMinutes[0].labelDistribution
+              .map((d) => `${d.label} ${d.count}条`)
+              .join("、")}
+            ，建议主播在该时段前后注意话术节奏，房管重点盯屏。
           </p>
         </div>
       )}

@@ -194,6 +194,10 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
           labelCount[d.riskLabel] = (labelCount[d.riskLabel] || 0) + 1;
         });
         const topLabel = Object.entries(labelCount).sort((a, b) => b[1] - a[1])[0]?.[0] as RiskLabel || "正常";
+        const labelDistribution = Object.entries(labelCount)
+          .filter(([label]) => label !== "正常")
+          .sort((a, b) => b[1] - a[1])
+          .map(([label, count]) => ({ label: label as RiskLabel, count }));
         return {
           minute: t.minute,
           total,
@@ -201,6 +205,7 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
           mediumRisk: t.mediumRisk,
           lowRisk: t.lowRisk,
           topLabel,
+          labelDistribution,
         };
       })
       .filter((t) => t.total > 0)
@@ -212,6 +217,7 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
     for (const [label, keywords] of Object.entries(RISK_KEYWORDS)) {
       if (label === "正常") continue;
       for (const word of keywords) {
+        if (word.length < 2) continue;
         const matches = riskDanmaku.filter((d) => d.content.includes(word)).length;
         if (matches > 0) {
           const existing = wordCount.get(word);
@@ -224,14 +230,14 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
 
     if (session) {
       session.brandBannedWords.forEach((word) => {
-        if (!word) return;
+        if (!word || word.length < 2) return;
         const matches = riskDanmaku.filter((d) => d.content.includes(word)).length;
         if (matches > 0) {
           wordCount.set(word, { count: matches, label: "恶意带节奏" });
         }
       });
       session.sensitiveTopics.forEach((topic) => {
-        if (!topic) return;
+        if (!topic || topic.length < 2) return;
         const matches = riskDanmaku.filter((d) => d.content.includes(topic)).length;
         if (matches > 0) {
           wordCount.set(topic, { count: matches, label: "涉政擦边" });

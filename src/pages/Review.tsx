@@ -45,7 +45,36 @@ export default function Review() {
         brandBannedWords: session.brandBannedWords,
         sensitiveTopics: session.sensitiveTopics,
       },
-      review: reviewData,
+      peakMinutes: reviewData.peakMinutes.map((p) => ({
+        minute: p.minute,
+        total: p.total,
+        highRisk: p.highRisk,
+        mediumRisk: p.mediumRisk,
+        lowRisk: p.lowRisk,
+        topLabel: p.topLabel,
+        labelDistribution: p.labelDistribution,
+      })),
+      topRiskWords: reviewData.topRiskWords.map((w) => ({
+        word: w.word,
+        count: w.count,
+        label: w.label,
+      })),
+      dispositionStats: {
+        total: reviewData.dispositionStats.total,
+        processed: reviewData.dispositionStats.processed,
+        unprocessed: reviewData.dispositionStats.unprocessed,
+        processRate: reviewData.dispositionStats.total > 0
+          ? `${((reviewData.dispositionStats.processed / reviewData.dispositionStats.total) * 100).toFixed(1)}%`
+          : "0.0%",
+        byAction: reviewData.dispositionStats.byAction,
+      },
+      dispositionLog: reviewData.dispositionLog.map((d) => ({
+        time: new Date(d.timestamp).toISOString(),
+        danmakuContent: d.danmakuContent,
+        riskLabel: d.riskLabel,
+        action: d.action,
+        handler: d.handler,
+      })),
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {

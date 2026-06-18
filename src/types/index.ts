@@ -52,6 +52,7 @@ export interface PeakMinuteInfo {
   mediumRisk: number;
   lowRisk: number;
   topLabel: RiskLabel;
+  labelDistribution: { label: RiskLabel; count: number }[];
 }
 
 export interface ReviewData {
